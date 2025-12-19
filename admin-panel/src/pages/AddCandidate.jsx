@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 function AddCandidate({ adminToken, onSuccess }) {
@@ -10,14 +10,25 @@ function AddCandidate({ adminToken, onSuccess }) {
   const [previewLogo, setPreviewLogo] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ---------------- IMAGE HANDLER ----------------
   const handleImageChange = (e, setFile, setPreview) => {
     const file = e.target.files[0];
-    if (file) {
-      setFile(file);
-      setPreview(URL.createObjectURL(file));
-    }
+    if (!file) return;
+
+    setFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setPreview(previewUrl);
   };
 
+  // ---------------- CLEANUP PREVIEWS ----------------
+  useEffect(() => {
+    return () => {
+      if (previewCandidate) URL.revokeObjectURL(previewCandidate);
+      if (previewLogo) URL.revokeObjectURL(previewLogo);
+    };
+  }, [previewCandidate, previewLogo]);
+
+  // ---------------- RESET FORM ----------------
   const resetForm = () => {
     setName("");
     setParty("");
@@ -27,8 +38,14 @@ function AddCandidate({ adminToken, onSuccess }) {
     setPreviewLogo("");
   };
 
+  // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!adminToken) {
+      alert("Admin authentication required.");
+      return;
+    }
 
     if (!name.trim() || !party.trim() || !candidatePhoto || !partyLogo) {
       alert("All fields are required!");
@@ -49,8 +66,7 @@ function AddCandidate({ adminToken, onSuccess }) {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${adminToken}`,
+            Authorization: `Bearer ${adminToken}`, // 🔥 DO NOT set Content-Type
           },
         }
       );
@@ -58,12 +74,13 @@ function AddCandidate({ adminToken, onSuccess }) {
       alert("Candidate added successfully!");
       resetForm();
 
-      if (onSuccess) onSuccess(res.data.candidate);
+      if (onSuccess) onSuccess(res.data);
     } catch (err) {
-      console.error("Error uploading candidate:", err);
+      console.error("ADD CANDIDATE ERROR:", err);
+
       alert(
         err.response?.data?.message ||
-          "Something went wrong while adding the candidate."
+          "Failed to add candidate. Please try again."
       );
     } finally {
       setLoading(false);
@@ -72,7 +89,10 @@ function AddCandidate({ adminToken, onSuccess }) {
 
   return (
     <div className="max-w-md">
-      <h2 className="text-2xl font-bold mb-4 text-black">Add Candidate</h2>
+      <h2 className="text-2xl font-bold mb-4 text-black">
+        Add Candidate
+      </h2>
+
       <form
         onSubmit={handleSubmit}
         className="space-y-5 bg-white p-6 rounded-xl shadow-lg border border-blue-200"
@@ -124,7 +144,7 @@ function AddCandidate({ adminToken, onSuccess }) {
           {previewCandidate && (
             <img
               src={previewCandidate}
-              alt="Preview"
+              alt="Candidate Preview"
               className="w-28 h-28 mt-3 rounded-xl object-cover border border-blue-400 shadow-sm"
             />
           )}
@@ -147,7 +167,7 @@ function AddCandidate({ adminToken, onSuccess }) {
           {previewLogo && (
             <img
               src={previewLogo}
-              alt="Preview"
+              alt="Party Logo Preview"
               className="w-24 h-24 mt-3 rounded-xl object-cover border border-blue-400 shadow-sm bg-white"
             />
           )}

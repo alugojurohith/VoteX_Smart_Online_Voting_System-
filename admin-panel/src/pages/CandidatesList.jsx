@@ -3,30 +3,48 @@ import axios from "axios";
 
 function CandidatesList() {
   const [candidates, setCandidates] = useState([]);
-  async function fetchCandidates() {
+  const BASE_URL = "http://localhost:5000";
+
+  // ===============================
+  // FETCH CANDIDATES
+  // ===============================
+  const fetchCandidates = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/candidates/list");
-      setCandidates(res.data);
+      const res = await axios.get(`${BASE_URL}/api/candidates/list`);
+      setCandidates(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.log("Error loading candidates:", error);
+      console.error("Error loading candidates:", error);
     }
-  }
+  };
 
-  async function deleteCandidate(id) {
-    if (!window.confirm("Are you sure you want to delete this candidate?")) return;
+  // ===============================
+  // DELETE CANDIDATE
+  // ===============================
+  const deleteCandidate = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this candidate?")) {
+      return;
+    }
 
     try {
-      await axios.delete(`http://localhost:5000/api/candidates/delete/${id}`);
+      await axios.delete(`${BASE_URL}/api/candidates/delete/${id}`);
       alert("Candidate deleted successfully!");
       fetchCandidates();
     } catch (error) {
-      console.log("Error deleting candidate:", error);
+      console.error("Error deleting candidate:", error);
     }
-  }
+  };
 
   useEffect(() => {
     fetchCandidates();
   }, []);
+
+  // ===============================
+  // HELPER: BUILD IMAGE URL
+  // ===============================
+  const buildImageUrl = (path) => {
+    if (!path) return "";
+    return `${BASE_URL}${path}`; // 🔥 NO extra slash
+  };
 
   return (
     <div style={{ padding: "20px" }}>
@@ -52,19 +70,21 @@ function CandidatesList() {
       >
         <thead>
           <tr style={{ background: "#e8f0ff", textAlign: "center" }}>
-            {["Photo", "Party Logo", "Full Name", "Role", "Action"].map((h) => (
-              <th
-                key={h}
-                style={{
-                  padding: "12px",
-                  color: "#000",
-                  fontWeight: "600",
-                  borderBottom: "2px solid #bcd2ff",
-                }}
-              >
-                {h}
-              </th>
-            ))}
+            {["Photo", "Party Logo", "Full Name", "Party", "Action"].map(
+              (h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: "12px",
+                    color: "#000",
+                    fontWeight: "600",
+                    borderBottom: "2px solid #bcd2ff",
+                  }}
+                >
+                  {h}
+                </th>
+              )
+            )}
           </tr>
         </thead>
 
@@ -94,7 +114,7 @@ function CandidatesList() {
                 {/* Candidate Photo */}
                 <td style={{ padding: "10px" }}>
                   <img
-                    src={`http://localhost:5000/${c.candidatePhoto}`}
+                    src={buildImageUrl(c.candidatePhoto)}
                     alt="Candidate"
                     width="70"
                     height="70"
@@ -109,7 +129,7 @@ function CandidatesList() {
                 {/* Party Logo */}
                 <td style={{ padding: "10px" }}>
                   <img
-                    src={`http://localhost:5000/${c.partySymbol}`}
+                    src={buildImageUrl(c.partySymbol)}
                     alt="Party Symbol"
                     width="70"
                     height="70"
@@ -123,14 +143,22 @@ function CandidatesList() {
                 </td>
 
                 {/* Full Name */}
-                <td style={{ padding: "10px", fontSize: "16px", color: "#000" }}>
+                <td
+                  style={{
+                    padding: "10px",
+                    fontSize: "16px",
+                    color: "#000",
+                  }}
+                >
                   {c.fullName}
                 </td>
 
-                {/* Party Name */}
-                <td style={{ padding: "10px", color: "#333" }}>{c.party}</td>
+                {/* Party */}
+                <td style={{ padding: "10px", color: "#333" }}>
+                  {c.party}
+                </td>
 
-                {/* Delete Button */}
+                {/* Delete */}
                 <td style={{ padding: "10px" }}>
                   <button
                     onClick={() => deleteCandidate(c._id)}

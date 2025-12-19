@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Candidate = require("../models/candidate_model");
 const Voter = require("../models/voter_model");
-const upload = require("../middleware/multer");
+const upload = require("../middleware/upload");
 
 // -------------------------------
 // ADD CANDIDATE
@@ -11,41 +11,48 @@ router.post(
   "/add",
   upload.fields([
     { name: "candidatePhoto", maxCount: 1 },
-    { name: "partyLogo", maxCount: 1 }
+    { name: "partyLogo", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
       const { fullName, party } = req.body;
 
       if (!fullName || !party) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({
+          success: false,
+          message: "Full name and party are required",
+        });
       }
 
-      // file paths from multer
+      // ✅ STORE RELATIVE URL PATHS (NOT FILE SYSTEM PATHS)
       const candidatePhoto = req.files?.candidatePhoto
-        ? req.files.candidatePhoto[0].path.replace(/\\/g, "/")
+        ? `/uploads/${req.files.candidatePhoto[0].filename}`
         : null;
 
-      const partyLogo = req.files?.partyLogo
-        ? req.files.partyLogo[0].path.replace(/\\/g, "/")
+      const partySymbol = req.files?.partyLogo
+        ? `/uploads/${req.files.partyLogo[0].filename}`
         : null;
 
       const newCandidate = new Candidate({
-        fullName,
-        party,
+        fullName: fullName.trim(),
+        party: party.trim(),
         candidatePhoto,
-        partySymbol: partyLogo, // store partySymbol field
+        partySymbol,
       });
 
       await newCandidate.save();
 
       res.status(201).json({
+        success: true,
         message: "Candidate added successfully",
         candidate: newCandidate,
       });
     } catch (error) {
-      console.error("Add candidate error:", error);
-      res.status(500).json({ message: "Server error", error: error.message });
+      console.error("ADD CANDIDATE ERROR:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error while adding candidate",
+      });
     }
   }
 );

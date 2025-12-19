@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Voter = require("../models/voter_model");
 
-
 // Controllers
 const {
   adminLogin,
@@ -11,7 +10,7 @@ const {
 
 // Middleware
 const authAdmin = require("../middleware/authAdmin");
-const upload = require("../middleware/upload");
+const excelUpload = require("../middleware/excelUpload");
 
 // ------------------------------------
 // Admin Login
@@ -24,17 +23,23 @@ router.post("/login", adminLogin);
 router.post(
   "/upload-voters",
   authAdmin,
-  upload.single("excelFile"),
+  excelUpload.single("excelFile"), // ✅ FIXED FIELD NAME
   uploadVotersFromExcel
 );
 
+// ------------------------------------
+// Get all voters (ADMIN PROTECTED)
+// ------------------------------------
 router.get("/voters", authAdmin, async (req, res) => {
   try {
     const voters = await Voter.find().select("-__v");
     res.json({ success: true, voters });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("FETCH VOTERS ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch voters.",
+    });
   }
 });
 

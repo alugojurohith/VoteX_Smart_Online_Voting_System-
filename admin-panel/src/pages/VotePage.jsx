@@ -2,29 +2,35 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const BASE_URL = "http://localhost:5000";
+
 function VotePage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [voterId, setVoterId] = useState(localStorage.getItem("voterId") || null);
+  const [voterId, setVoterId] = useState(
+    localStorage.getItem("voterId") || null
+  );
   const [hasVoted, setHasVoted] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate(); // <-- ADDED
+  const navigate = useNavigate();
 
-  // Load candidates on mount
+  // =============================
+  // LOAD CANDIDATES
+  // =============================
   useEffect(() => {
     async function loadCandidates() {
       try {
-        const res = await axios.get("http://localhost:5000/api/candidates/list");
+        const res = await axios.get(`${BASE_URL}/api/candidates/list`);
         const formatted = res.data.map((c) => ({
           _id: c._id,
           fullName: c.fullName,
           party: c.party,
-          votes: c.votes ?? 0,
-          candidatePhoto: `http://localhost:5000/${c.candidatePhoto}`,
-          partyLogo: `http://localhost:5000/${c.partySymbol}`,
+          votes: Number(c.votes || 0),
+          candidatePhoto: `${BASE_URL}${c.candidatePhoto}`, // ✅ FIXED
+          partyLogo: `${BASE_URL}${c.partySymbol}`,         // ✅ FIXED
         }));
         setCandidates(formatted);
       } catch (err) {
@@ -36,28 +42,34 @@ function VotePage() {
     loadCandidates();
   }, []);
 
-  // Send OTP
+  // =============================
+  // SEND OTP
+  // =============================
   const sendOtp = async () => {
     if (!phone) return alert("Enter your phone number first");
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/send-otp", { phone });
+      const res = await axios.post(`${BASE_URL}/api/auth/send-otp`, { phone });
       if (res.data.success) {
         setOtpSent(true);
-        alert(`OTP sent! ${res.data.otp ? `OTP: ${res.data.otp}` : ""}`);
+        alert("OTP sent successfully!");
       } else {
         alert(res.data.message || "Failed to send OTP");
       }
     } catch (err) {
-      console.error("Send OTP error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Failed to send OTP");
     }
   };
 
-  // Verify OTP
+  // =============================
+  // VERIFY OTP
+  // =============================
   const verifyOtp = async () => {
     if (!otp) return alert("Enter OTP");
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/verify-otp", { phone, otp });
+      const res = await axios.post(`${BASE_URL}/api/auth/verify-otp`, {
+        phone,
+        otp,
+      });
       if (res.data.success) {
         localStorage.setItem("voterId", res.data.voterId);
         setVoterId(res.data.voterId);
@@ -67,56 +79,62 @@ function VotePage() {
         alert(res.data.message || "Invalid OTP");
       }
     } catch (err) {
-      console.error("Verify OTP error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Failed to verify OTP");
     }
   };
 
-  // Check voter status
+  // =============================
+  // CHECK VOTER STATUS
+  // =============================
   const checkVoterStatus = async () => {
     if (!voterId) return false;
     try {
-      const res = await axios.get(`http://localhost:5000/api/auth/status/${voterId}`);
+      const res = await axios.get(
+        `${BASE_URL}/api/auth/status/${voterId}`
+      );
       if (res.data.hasVoted) {
         setHasVoted(true);
         alert("You have already voted.");
-        navigate("/"); // <-- NAVIGATE IF ALREADY VOTED
+        navigate("/");
         return false;
       }
       return true;
     } catch (err) {
-      console.error("Voter status check failed:", err.response?.data || err.message);
       alert("Unable to verify voter. Please try again.");
       return false;
     }
   };
 
-  // Vote for a candidate
+  // =============================
+  // SUBMIT VOTE
+  // =============================
   const handleVote = async (candidateId) => {
     const canVote = await checkVoterStatus();
     if (!canVote) return;
 
     try {
       await axios.post(
-        `http://localhost:5000/api/candidates/vote/${candidateId}`,
+        `${BASE_URL}/api/candidates/vote/${candidateId}`,
         { voterId }
       );
-
       setHasVoted(true);
       alert("Vote submitted successfully!");
-
-      // 🚀 NAVIGATE AFTER SUCCESSFUL VOTE
       navigate("/");
-
     } catch (err) {
-      console.error("Vote submission error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Voting failed");
     }
   };
 
-  if (loading) return <p className="text-center p-6">Loading candidates...</p>;
+  // =============================
+  // LOADING
+  // =============================
+  if (loading) {
+    return <p className="text-center p-6">Loading candidates...</p>;
+  }
 
-  // Render OTP form if voterId not yet verified
+  // =============================
+  // OTP PAGE
+  // =============================
   if (!voterId) {
     return (
       <div className="p-6 max-w-md mx-auto bg-white rounded shadow space-y-4">
@@ -140,32 +158,34 @@ function VotePage() {
           />
         )}
 
-        <div className="flex gap-2">
-          {!otpSent ? (
-            <button
-              onClick={sendOtp}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Send OTP
-            </button>
-          ) : (
-            <button
-              onClick={verifyOtp}
-              className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Verify OTP
-            </button>
-          )}
-        </div>
+        {!otpSent ? (
+          <button
+            onClick={sendOtp}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Send OTP
+          </button>
+        ) : (
+          <button
+            onClick={verifyOtp}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Verify OTP
+          </button>
+        )}
       </div>
     );
   }
 
-  // Render voting page
+  // =============================
+  // VOTING PAGE
+  // =============================
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow">
       <h1 className="text-2xl font-bold mb-2">Vote for a Candidate</h1>
-      <p className="text-sm text-gray-600 mb-6">Select your preferred candidate below</p>
+      <p className="text-sm text-gray-600 mb-6">
+        Select your preferred candidate below
+      </p>
 
       {candidates.length === 0 ? (
         <p className="text-gray-500">No candidates available.</p>
@@ -185,10 +205,12 @@ function VotePage() {
                 <img
                   src={c.partyLogo}
                   alt={c.party}
-                  className="w-12 h-12 object-cover rounded"
+                  className="w-12 h-12 object-contain rounded"
                 />
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{c.fullName}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {c.fullName}
+                  </p>
                   <p className="text-sm text-gray-600">{c.party}</p>
                 </div>
               </div>

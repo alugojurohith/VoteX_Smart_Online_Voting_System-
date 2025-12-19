@@ -10,15 +10,17 @@ function AdminDashboard() {
   const [view, setView] = useState("list");
   const [candidates, setCandidates] = useState([]);
 
-  // -----------------------------
-  // ✔ FETCH ALL CANDIDATES
-  // -----------------------------
-  async function fetchCandidates() {
-    try {
-      const res = await axios.get("http://localhost:5000/api/candidates/list");
-      console.log("Backend response:", res.data);
+  const adminToken = localStorage.getItem("adminToken");
 
-      // Ensure we have an array
+  // =================================================
+  // FETCH ALL CANDIDATES
+  // =================================================
+  const fetchCandidates = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/candidates/list"
+      );
+
       const candidatesArray = Array.isArray(res.data)
         ? res.data
         : res.data?.candidates || [];
@@ -28,87 +30,58 @@ function AdminDashboard() {
         fullName: c.fullName,
         party: c.party,
         votes: c.votes ?? 0,
-        candidatePhoto: `http://localhost:5000/${c.candidatePhoto}`,
-        partyLogo: `http://localhost:5000/${c.partySymbol}`,
+        candidatePhoto: c.candidatePhoto
+          ? `http://localhost:5000${c.candidatePhoto}`
+          : null,
+        partyLogo: c.partySymbol
+          ? `http://localhost:5000${c.partySymbol}`
+          : null,
       }));
 
       setCandidates(formatted);
     } catch (error) {
-      console.error("Error loading candidates:", error);
+      console.error("FETCH CANDIDATES ERROR:", error);
       setCandidates([]);
     }
-  }
+  };
 
   useEffect(() => {
     fetchCandidates();
   }, []);
 
-  // -----------------------------
-  // ✔ ADD CANDIDATE FUNCTION
-  // -----------------------------
-  async function addCandidate(data) {
-    const formData = new FormData();
-    formData.append("fullName", data.fullName);
-    formData.append("party", data.party);
-    formData.append("candidatePhoto", data.candidatePhoto);
-    formData.append("partyLogo", data.partyLogo); // Must match Multer field
-
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/candidates/add",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
-      const saved = res.data.candidate;
-
-      setCandidates((prev) => [
-        ...prev,
-        {
-          _id: saved._id,
-          fullName: saved.fullName,
-          party: saved.party,
-          votes: saved.votes ?? 0,
-          candidatePhoto: `http://localhost:5000/${saved.candidatePhoto}`,
-          partyLogo: `http://localhost:5000/${saved.partySymbol}`,
-        },
-      ]);
-
-      alert("Candidate added successfully!");
-      setView("list");
-    } catch (err) {
-      console.error("Error uploading candidate:", err);
-      alert("Error uploading candidate!");
-    }
-  }
-
-  // -----------------------------
-  // ✔ DELETE CANDIDATE (UI only)
-  // -----------------------------
-  function deleteCandidate(id) {
+  // =================================================
+  // DELETE CANDIDATE (UI ONLY)
+  // =================================================
+  const deleteCandidate = (id) => {
     setCandidates((prev) => prev.filter((c) => c._id !== id));
-  }
+  };
 
-  // -----------------------------
-  // ✔ VOTE (UI only)
-  // -----------------------------
-  function incrementVote(id) {
+  // =================================================
+  // VOTE (UI ONLY)
+  // =================================================
+  const incrementVote = (id) => {
     setCandidates((prev) =>
-      prev.map((c) => (c._id === id ? { ...c, votes: c.votes + 1 } : c))
+      prev.map((c) =>
+        c._id === id ? { ...c, votes: c.votes + 1 } : c
+      )
     );
-  }
+  };
 
-  // -----------------------------
-  // ✔ RENDER UI
-  // -----------------------------
+  // =================================================
+  // RENDER
+  // =================================================
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar active={view} onNavigate={setView} className="w-64" />
+      <Sidebar active={view} onNavigate={setView} />
 
       <main className="flex-1 p-8 overflow-auto">
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-          <p className="text-sm text-gray-600">Manage candidates and view results</p>
+          <h1 className="text-2xl font-semibold">
+            Admin Dashboard
+          </h1>
+          <p className="text-sm text-gray-600">
+            Manage candidates, voters, and results
+          </p>
         </header>
 
         <section className="bg-white rounded shadow p-6">
@@ -120,11 +93,21 @@ function AdminDashboard() {
             />
           )}
 
-          {view === "form" && <AddCandidate onAdd={addCandidate} />}
+          {view === "form" && (
+            <AddCandidate
+              adminToken={adminToken}
+              onSuccess={() => {
+                fetchCandidates();
+                setView("list");
+              }}
+            />
+          )}
 
-          {view === "results" && <VotingResults candidates={candidates} />}
+          {view === "results" && (
+            <VotingResults candidates={candidates} />
+          )}
 
-          {view === "voters" && <VotersList />} {/* ✅ Voters List added */}
+          {view === "voters" && <VotersList />}
         </section>
       </main>
     </div>
