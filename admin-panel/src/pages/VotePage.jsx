@@ -17,13 +17,27 @@ function VotePage() {
 
   const navigate = useNavigate();
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const voterToken = localStorage.getItem("voterToken");
+    if (!voterToken) {
+      navigate("/voter-login");
+      return;
+    }
+  }, [navigate]);
+
   // =============================
   // LOAD CANDIDATES
   // =============================
   useEffect(() => {
     async function loadCandidates() {
       try {
-        const res = await axios.get(`${BASE_URL}/api/candidates/list`);
+        const voterToken = localStorage.getItem("voterToken");
+        const res = await axios.get(`${BASE_URL}/api/candidates/list`, {
+          headers: {
+            Authorization: `Bearer ${voterToken}`,
+          },
+        });
         const formatted = res.data.map((c) => ({
           _id: c._id,
           fullName: c.fullName,
@@ -89,8 +103,14 @@ function VotePage() {
   const checkVoterStatus = async () => {
     if (!voterId) return false;
     try {
+      const voterToken = localStorage.getItem("voterToken");
       const res = await axios.get(
-        `${BASE_URL}/api/auth/status/${voterId}`
+        `${BASE_URL}/api/auth/status/${voterId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${voterToken}`,
+          },
+        }
       );
       if (res.data.hasVoted) {
         setHasVoted(true);
@@ -113,13 +133,27 @@ function VotePage() {
     if (!canVote) return;
 
     try {
+      const voterToken = localStorage.getItem("voterToken");
       await axios.post(
         `${BASE_URL}/api/candidates/vote/${candidateId}`,
-        { voterId }
+        { voterId },
+        {
+          headers: {
+            Authorization: `Bearer ${voterToken}`,
+          },
+        }
       );
       setHasVoted(true);
       alert("Vote submitted successfully!");
-      navigate("/");
+
+      // Clear voter data after successful voting
+      setTimeout(() => {
+        localStorage.removeItem("voterToken");
+        localStorage.removeItem("voterId");
+        localStorage.removeItem("phone");
+        localStorage.removeItem("otp");
+        navigate("/");
+      }, 2000);
     } catch (err) {
       alert(err.response?.data?.message || "Voting failed");
     }

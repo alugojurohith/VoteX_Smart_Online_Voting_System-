@@ -3,12 +3,54 @@ const router = express.Router();
 const Candidate = require("../models/candidate_model");
 const Voter = require("../models/voter_model");
 const upload = require("../middleware/upload");
+const jwt = require("jsonwebtoken");
+
+// Middleware
+const authAdmin = require("../middleware/authAdmin");
+const authVoter = require("../middleware/authVoter");
+
+// Combined middleware for admin or voter access
+const authAdminOrVoter = (req, res, next) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      success: false,
+      errorCode: "NO_TOKEN",
+      message: "Authorization token missing.",
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role === "admin" || decoded.role === "voter") {
+      req.user = decoded;
+      return next();
+    } else {
+      return res.status(403).json({
+        success: false,
+        errorCode: "NOT_AUTHORIZED",
+        message: "Access denied.",
+      });
+    }
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      errorCode: "INVALID_TOKEN",
+      message: "Invalid or expired token.",
+    });
+  }
+};
 
 // -------------------------------
 // ADD CANDIDATE
 // -------------------------------
 router.post(
   "/add",
+  authAdmin,
   upload.fields([
     { name: "candidatePhoto", maxCount: 1 },
     { name: "partyLogo", maxCount: 1 },
@@ -60,7 +102,7 @@ router.post(
 // -------------------------------
 // GET ALL CANDIDATES
 // -------------------------------
-router.get("/list", async (req, res) => {
+router.get("/list", authAdminOrVoter, async (req, res) => {
   try {
     const candidates = await Candidate.find();
     res.status(200).json(candidates);
@@ -73,7 +115,7 @@ router.get("/list", async (req, res) => {
 // -------------------------------
 // DELETE A CANDIDATE
 // -------------------------------
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", authAdmin, async (req, res) => {
   try {
     const candidateId = req.params.id;
     const deleted = await Candidate.findByIdAndDelete(candidateId);
@@ -92,7 +134,7 @@ router.delete("/delete/:id", async (req, res) => {
 // -------------------------------
 // VOTE FOR A CANDIDATE
 // -------------------------------
-router.post("/vote/:id", async (req, res) => {
+router.post("/vote/:id", authVoter, async (req, res) => {
   try {
     const candidateId = req.params.id;
     const { voterId } = req.body;

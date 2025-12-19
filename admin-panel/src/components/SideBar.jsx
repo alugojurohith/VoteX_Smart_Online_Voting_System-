@@ -1,6 +1,14 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function Sidebar({ active = "list", onNavigate }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    navigate("/admin-login");
+  };
+
   const items = [
     { key: "list", label: "Candidates List", icon: "👥" },
     { key: "form", label: "Add Candidate", icon: "➕" },
@@ -36,6 +44,12 @@ function Sidebar({ active = "list", onNavigate }) {
         <div>
           Logged in as <span className="font-medium">Admin</span>
         </div>
+        <button
+          onClick={handleLogout}
+          className="mt-2 w-full px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+        >
+          Logout
+        </button>
       </div>
     </aside>
   );

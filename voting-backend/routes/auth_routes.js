@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const Voter = require("../models/voter_model");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+
+// Middleware
+const authVoter = require("../middleware/authVoter");
 
 // -------------------------------------------
 // CONFIG
@@ -126,10 +130,18 @@ router.post("/verify-otp", async (req, res) => {
 
     otpStore.delete(normalizedPhone);
 
+    // Generate JWT token for voter
+    const token = jwt.sign(
+      { voterId: voter._id, role: "voter" },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
     return res.json({
       success: true,
       voterId: voter._id,
       hasVoted: Boolean(voter.hasVoted),
+      token,
       message: "OTP verified",
     });
   } catch (err) {
@@ -142,7 +154,7 @@ router.post("/verify-otp", async (req, res) => {
 // GET VOTER STATUS
 // GET /api/voters/status/:id
 // -------------------------------------------
-router.get("/status/:id", async (req, res) => {
+router.get("/status/:id", authVoter, async (req, res) => {
   try {
     const voter = await Voter.findById(req.params.id).lean();
 

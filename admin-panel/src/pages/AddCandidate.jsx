@@ -57,7 +57,7 @@ function AddCandidate({ adminToken, onSuccess }) {
 
       const formData = new FormData();
       formData.append("fullName", name.trim());
-      formData.append("party", party.trim());
+      formData.append("role", party.trim());
       formData.append("candidatePhoto", candidatePhoto);
       formData.append("partyLogo", partyLogo);
 

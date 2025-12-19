@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/SideBar.jsx";
 import CandidatesList from "./CandidatesList.jsx";
@@ -7,10 +8,19 @@ import VotingResults from "./VotingResults.jsx";
 import VotersList from "./VoterList.jsx";
 
 function AdminDashboard() {
+  const navigate = useNavigate();
   const [view, setView] = useState("list");
   const [candidates, setCandidates] = useState([]);
 
   const adminToken = localStorage.getItem("adminToken");
+
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!adminToken) {
+      navigate("/admin-login");
+      return;
+    }
+  }, [adminToken, navigate]);
 
   // =================================================
   // FETCH ALL CANDIDATES
@@ -18,7 +28,12 @@ function AdminDashboard() {
   const fetchCandidates = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/candidates/list"
+        "http://localhost:5000/api/candidates/list",
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
       );
 
       const candidatesArray = Array.isArray(res.data)

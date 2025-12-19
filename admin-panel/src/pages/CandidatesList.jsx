@@ -10,7 +10,12 @@ function CandidatesList() {
   // ===============================
   const fetchCandidates = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/candidates/list`);
+      const adminToken = localStorage.getItem("adminToken");
+      const res = await axios.get(`${BASE_URL}/api/candidates/list`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
       setCandidates(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error loading candidates:", error);
@@ -26,7 +31,12 @@ function CandidatesList() {
     }
 
     try {
-      await axios.delete(`${BASE_URL}/api/candidates/delete/${id}`);
+      const adminToken = localStorage.getItem("adminToken");
+      await axios.delete(`${BASE_URL}/api/candidates/delete/${id}`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
       alert("Candidate deleted successfully!");
       fetchCandidates();
     } catch (error) {

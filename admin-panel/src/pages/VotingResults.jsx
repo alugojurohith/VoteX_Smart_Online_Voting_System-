@@ -24,7 +24,12 @@ function VotingResults() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await axios.get(`${BASE_URL}/api/candidates/list`);
+        const adminToken = localStorage.getItem("adminToken");
+        const res = await axios.get(`${BASE_URL}/api/candidates/list`, {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        });
         setCandidates(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Failed to fetch candidates:", err);

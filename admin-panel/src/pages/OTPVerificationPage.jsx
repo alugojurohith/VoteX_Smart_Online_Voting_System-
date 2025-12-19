@@ -73,6 +73,9 @@ useEffect(() => {
         if (res.data.voterId) {
           localStorage.setItem("voterId", res.data.voterId);
         }
+        if (res.data.token) {
+          localStorage.setItem("voterToken", res.data.token);
+        }
 
         localStorage.removeItem("otp");
 
