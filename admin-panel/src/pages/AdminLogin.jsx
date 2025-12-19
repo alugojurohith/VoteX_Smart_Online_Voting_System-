@@ -28,6 +28,7 @@ const AdminLogin = () => {
 
       if (res.data.success) {
         setMessage("Login successful!");
+        localStorage.setItem("adminToken", res.data.token);
         navigate("/admin-dashboard");
       } else {
         setMessage(res.data.message || "Invalid credentials");

@@ -5,6 +5,7 @@ function Sidebar({ active = "list", onNavigate }) {
     { key: "list", label: "Candidates List", icon: "👥" },
     { key: "form", label: "Add Candidate", icon: "➕" },
     { key: "results", label: "Voting Results", icon: "📊" },
+    { key: "voters", label: "Voters List", icon: "🗳️" },
   ];
 
   return (
@@ -40,5 +41,4 @@ function Sidebar({ active = "list", onNavigate }) {
   );
 }
 
-// Default export at the bottom
 export default Sidebar;

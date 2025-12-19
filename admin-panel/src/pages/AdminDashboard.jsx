@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Sidebar from "../components/Sidebar.jsx";
+import Sidebar from "../components/SideBar.jsx";
 import CandidatesList from "./CandidatesList.jsx";
 import AddCandidate from "./AddCandidate.jsx";
 import VotingResults from "./VotingResults.jsx";
+import VotersList from "./VoterList.jsx";
+
 function AdminDashboard() {
   const [view, setView] = useState("list");
   const [candidates, setCandidates] = useState([]);
@@ -121,9 +123,12 @@ function AdminDashboard() {
           {view === "form" && <AddCandidate onAdd={addCandidate} />}
 
           {view === "results" && <VotingResults candidates={candidates} />}
+
+          {view === "voters" && <VotersList />} {/* ✅ Voters List added */}
         </section>
       </main>
     </div>
   );
 }
+
 export default AdminDashboard;

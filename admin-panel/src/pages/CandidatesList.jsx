@@ -3,7 +3,6 @@ import axios from "axios";
 
 function CandidatesList() {
   const [candidates, setCandidates] = useState([]);
-
   async function fetchCandidates() {
     try {
       const res = await axios.get("http://localhost:5000/api/candidates/list");
@@ -53,7 +52,7 @@ function CandidatesList() {
       >
         <thead>
           <tr style={{ background: "#e8f0ff", textAlign: "center" }}>
-            {["Photo", "Party Logo", "Full Name", "Party", "Action"].map((h) => (
+            {["Photo", "Party Logo", "Full Name", "Role", "Action"].map((h) => (
               <th
                 key={h}
                 style={{

@@ -1,33 +1,33 @@
 import React, { useState } from "react";
+import axios from "axios";
 
-function AddCandidate({ onAdd }) {
+function AddCandidate({ adminToken, onSuccess }) {
   const [name, setName] = useState("");
   const [party, setParty] = useState("");
-
   const [candidatePhoto, setCandidatePhoto] = useState(null);
   const [partyLogo, setPartyLogo] = useState(null);
-
   const [previewCandidate, setPreviewCandidate] = useState("");
   const [previewLogo, setPreviewLogo] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleImageChange(e, setFile, setPreview) {
+  const handleImageChange = (e, setFile, setPreview) => {
     const file = e.target.files[0];
     if (file) {
       setFile(file);
       setPreview(URL.createObjectURL(file));
     }
-  }
+  };
 
-  function resetForm() {
+  const resetForm = () => {
     setName("");
     setParty("");
     setCandidatePhoto(null);
     setPartyLogo(null);
     setPreviewCandidate("");
     setPreviewLogo("");
-  }
+  };
 
-  function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name.trim() || !party.trim() || !candidatePhoto || !partyLogo) {
@@ -35,20 +35,44 @@ function AddCandidate({ onAdd }) {
       return;
     }
 
-    onAdd({
-      fullName: name.trim(),
-      party: party.trim(),
-      candidatePhoto,
-      partyLogo,
-    });
+    try {
+      setLoading(true);
 
-    resetForm();
-  }
+      const formData = new FormData();
+      formData.append("fullName", name.trim());
+      formData.append("party", party.trim());
+      formData.append("candidatePhoto", candidatePhoto);
+      formData.append("partyLogo", partyLogo);
+
+      const res = await axios.post(
+        "http://localhost:5000/api/candidates/add",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
+
+      alert("Candidate added successfully!");
+      resetForm();
+
+      if (onSuccess) onSuccess(res.data.candidate);
+    } catch (err) {
+      console.error("Error uploading candidate:", err);
+      alert(
+        err.response?.data?.message ||
+          "Something went wrong while adding the candidate."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-md">
       <h2 className="text-2xl font-bold mb-4 text-black">Add Candidate</h2>
-
       <form
         onSubmit={handleSubmit}
         className="space-y-5 bg-white p-6 rounded-xl shadow-lg border border-blue-200"
@@ -97,7 +121,6 @@ function AddCandidate({ onAdd }) {
             className="w-full p-3 border border-blue-300 rounded-lg"
             required
           />
-
           {previewCandidate && (
             <img
               src={previewCandidate}
@@ -121,7 +144,6 @@ function AddCandidate({ onAdd }) {
             className="w-full p-3 border border-blue-300 rounded-lg"
             required
           />
-
           {previewLogo && (
             <img
               src={previewLogo}
@@ -135,9 +157,10 @@ function AddCandidate({ onAdd }) {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+            disabled={loading}
+            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50"
           >
-            Add
+            {loading ? "Adding..." : "Add"}
           </button>
 
           <button

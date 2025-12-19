@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/HomePage.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
 import VoterLogin from "./pages/VoterLogin.jsx";
-import AdminDashBoard from "./pages/AdminDashBoard.jsx";
+import AdminDashBoard from "./pages/AdminDashboard.jsx";
 import OTPVerificationPage from "./pages/OTPVerificationPage.jsx";
 import VotePage from "./pages/VotePage.jsx";
 function App() {
